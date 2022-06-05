@@ -1,9 +1,8 @@
 import  { Component } from 'react';
 import {TextInput, StyleSheet, Text, TouchableHighlight, View} from 'react-native';
 import PropTypes from 'prop-types';
-import BootstrapStyleSheet from 'react-native-bootstrap-styles';
-import { StackActions, NavigationActions } from 'react-navigation';
 import API from '../../service/api';
+import BootstrapStyleSheet from 'react-native-bootstrap-styles';
 
 const bootstrapStyleSheet = new BootstrapStyleSheet();
 const { styles: s, constants: c } = bootstrapStyleSheet;
@@ -15,6 +14,8 @@ export default class Login extends Component {
         this.state = {
             username: '',
             password: '',
+            userId: null,
+            token: null,
             error: '',
             loading: true,
         }
@@ -37,7 +38,7 @@ export default class Login extends Component {
         this.setState({ password: password });
     }
     handleCreateAccountPress = () => {
-        this.props.navigation.navigate("Criar Nova Conta");
+        this.props.navigation.navigate("Register");
     };
     logarOnSubmit = async () => {
         this.setState({ error: null});
@@ -55,7 +56,18 @@ export default class Login extends Component {
                     userId: res.data.user.id,
                     token: res.data.token,
                 });
-                this.props.navigation.reset({index: 0, routes: [{name: "MainPage"}]})
+                this.props.navigation.reset({
+                        index: 0, 
+                        routes: [
+                            {
+                                name: "MainPage", 
+                                params: {
+                                    userId: this.state.userId,
+                                    token: this.state.token
+                                }
+                            },
+                        ],
+                    });
             } catch (error) {
                 console.log(error);
                 this.setState({ error: (error?.response?.data?.message || error?.message) });
@@ -87,6 +99,7 @@ export default class Login extends Component {
                             onChangeText={ this.onChangePassword } 
                             autoCapitalize="none"
                             autoCorrect={false}
+                            secureTextEntry={true}
                         ></TextInput>
                     </View>
                         {this.state.error !== null && <Text style={[s.textDanger,s.textCenter]}>{this.state.error}</Text>}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://filipeabner.ddns.net:5000'
+  baseURL: `https://nameless-fjord-66404.herokuapp.com`
 });
 export default api;

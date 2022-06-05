@@ -1,83 +1,140 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-import { Component } from 'react';
-import { Navigate, SafeAreaView } from 'react-router-native';
-import API from '../../../api';
+import React, { Component,useState, useEffect } from 'react';
+import {TextInput, ScrollView,StyleSheet, Text, TouchableHighlight, View} from 'react-native';
+import PropTypes from 'prop-types';
+import API from '../../service/api';
+import BootstrapStyleSheet from 'react-native-bootstrap-styles';
 import Card from './card/card.component';
-// import DatePicker from "react-datepicker";
-// import "react-datepicker/dist/react-datepicker.css";
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const bootstrapStyleSheet = new BootstrapStyleSheet();
+const { styles: s, constants: c } = bootstrapStyleSheet;
+
+
 
 export default class Transactions extends Component {
     constructor(props) {
         super(props);
+        const { route } = this.props;
         this.state = {
             // date: new Date().toISOString().slice(0, 10),
+            userId: route.params?.userId || 10,
+            token: route.params?.token,
             date: new Date(),
             transactions: [],
             loading: true,
+            show: false,
         }
-
     }
+    static navigationOptions = {
+        header: null,
+    };
+    
+    static propTypes = {
+        navigation: PropTypes.shape({
+            navigate: PropTypes.func,
+            dispatch: PropTypes.func,
+        }).isRequired,
+    };
     componentDidMount() {
-        API.get(`/releases/list/user/${this.props.userId}/${this.state.date.toISOString().slice(0, 10)}`).then((res) => {
+        // {
+        //     value: 10.10,
+        //     type: 'r',
+        //     createdAt: new Date(),
+        // }
+        API.get(`/releases/list/user/${this.state.userId}/${this.state.date.toISOString().slice(0, 10)}`).then((res) => {
             this.setState({
-                transactions: res.data,
+                transactions: res.data ,
                 loading: false,
             })
+            console.log(res.data);
         }).catch((error) => {
             alert(error);
         })
     }
-    handleChange = (date) => {
+    handleChange = () => {
         this.setState({ loading: true });
-        API.get(`/releases/list/user/${this.props.userId}/${date.toISOString().slice(0, 10)}`).then((res) => {
+        API.get(`/releases/list/user/${this.state.userId}/${this.state.date.toISOString().slice(0, 10)}`).then((res) => {
             this.setState({
                 transactions: res.data,
-                date: date,
                 loading: false,
             })
+            this.setState({show: false})
 
         }).catch((error) => {
             this.setState({
                 transactions: [],
-                date: date,
                 loading: true,
             })
+            this.setState({show: false})
             alert(error);
         })
 
     };
+    goTo(transaction){
+        this.props.navigation.navigate('EditTransaction',
+        {
+            transaction: transaction,
+            userId: this.state.userId, 
+            token: this.state.token,
+        });
+        // this.props.navigation.navigate("EditTransaction",{ transaction: props, userId: this.state.userId, token: this.state.token})
+    }
     render() {
         return (
-            <SafeAreaView>
-                <View className='container'>
-                    <View className='mb-5'>
-                        <h4>Transações </h4>
-                        <View className='row'>
-                            <TextInput
-                                keyboardType="date"
-                                selected={ this.state.date }
-                                onChangeText={ (date) => this.handleChange(date) }
-                            />
-                        </View>
-
-                        <View className='mt-3'>
-                            <h6>Total: { this.state.transactions.length }</h6>
-                        </View>
+            <View style={[s.col12,s.dFlex,s.textCenter,s.p3]}>
+                <View style={[]}>
+                    {/* <Text style={[s.h5]}>Escolher Data</Text> */}
+                    <View style={[s.row]} >
+                        <TouchableHighlight onPress={()=> this.setState({show: true})} style={[s.btnTouchable,s.mt3]}>
+                            <View style={[s.btn, s.btnSecondary,{height: 40}]}>
+                                <Text style={[s.btnText, s.btnPrimaryText]}>Escolher data</Text>
+                            </View>
+                        </TouchableHighlight>
+                        {/* <TextInput
+                            style={[s.formControl]}
+                            keyboardType="number-pad"
+                            selected={ this.state.date }
+                            onChangeText={ (date) => this.handleChange(date) }
+                        /> */}
+                         {this.state.show && <DateTimePicker
+                            testID="dateTimePicker"
+                            value={this.state.date}
+                            mode="date"
+                            onChange={(date)=> this.handleChange(date) }
+                        />}
                     </View>
-                    <View>
 
-                        {
-                            !this.state.loading
-                                ? this.state.transactions.map((item) => {
-                                    return <Card value={ item.transaction.value } type={ item.transaction.type } date={ item.transaction.createdAt } />
-                                })
-                                : <View class="spinner-border mt-5" role="status">
-                                    <span class="sr-only"></span>
-                                </View>
-                        }
+                    <View style={[s.mt3]}>
+                        <Text style={[s.h5]}>Total de transações nesta data: { this.state.transactions.length }</Text>
                     </View>
                 </View>
-            </SafeAreaView>
+                <ScrollView>
+
+                    {
+                        !this.state.loading
+                            ? this.state.transactions.map((item) => {
+                                return (
+                                <View>
+                                    <Card
+                                    key={item.transaction.id}
+                                    value={ item.value } 
+                                    description={item.transaction.description} 
+                                    type={ item.transaction.type } 
+                                    date={ item.createdAt } 
+                                    operationType={ item.operationType } 
+                                    id={ item.transaction.id } />
+                                    <TouchableHighlight onPress={()=> this.goTo(item.transaction)} style={[s.btnTouchable,s.mt0]}>
+                                        <View style={[s.btn, s.btnWarning,{height: 40}]}>
+                                            <Text style={[s.btnText, s.btnPrimaryText]}>Editar</Text>
+                                        </View>
+                                    </TouchableHighlight>
+                                </View>
+                                )
+                            })
+                            : <View style={[s.spinnerBorder, s.mt5]}></View>
+                    }
+                </ScrollView>
+            </View>
         )
     }
 }

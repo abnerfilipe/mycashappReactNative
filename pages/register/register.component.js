@@ -82,6 +82,7 @@ export default class Register extends Component{
                             onChangeText={ this.onChangePassword } 
                             autoCapitalize="none"
                             autoCorrect={false}
+                            secureTextEntry={true}
                         ></TextInput>
                     </View>
                         {this.state.error !== null && <Text style={[s.textDanger,s.textCenter]}>{this.state.error}</Text>}
